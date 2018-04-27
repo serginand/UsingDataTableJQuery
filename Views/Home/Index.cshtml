@@ -1,0 +1,231 @@
+﻿<div id="table-container">
+<table id="myDataTable" class="table table-striped table-bordered" style="width:100%">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Age</th>
+            <th>Start Date</th>
+            <th>Operations</th>
+
+        </tr>
+    </thead>
+</table>
+</div>
+<button type="button" id="Add" style="display: none;">Add</button>
+<div id="EditAdd-div" style="display: none;">
+    <form id="EditAdd-form">
+        <div id="EditAdd-title"></div>
+        <input type="hidden" id="Emp_ID">
+        <div class="fields_div">
+            <div class="form_field"><label for="id_name">Name</label><input id="id_name" name="id_name" type="text" required></div><br />
+            <div class="form_field"><label for="id_position">Position</label><input id="id_position" type="text" required></div><br />
+            <div class="form_field"><label for="id_age">Age</label><input id="id_age" placeholder="digits only" pattern="^[0-9]+$" type="text" required></div><br />
+            <div class="form_field"><label for="id_startdate">Start Date</label><input type="date" id="id_startdate" required></div><br />
+            <div style="text-align: center;">
+                <input  style="width:100px;height:25px" type="submit" value="Ок">
+                <input  style="width:100px;height:25px" type="button" name="cancel" value="Cancel">
+            </div>
+        </div>
+    </form>
+</div>
+@section scripts
+{
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            const mytable = $('#myDataTable').DataTable({
+                "processing": true,
+                "serverSide": true,
+                "ordering": true,
+                "paging": true,
+                "searching": true,
+                "ajax":
+                    {
+                        "url": 'API/Employees',
+                        "type": "get",
+                        "datatype": "json"
+                    },
+                "columns": [
+                    { "data": "Id" },
+                    { "data": "Name" },
+                    { "data": "Position" },
+                    { "data": "Age" },
+                    { "data": "StartDate" },
+                    { "data": "Id", "bSearchable": false, "bSortable": false, "sWidth": "40px",
+                        "render": function (data) {
+                            return '<button type="button" style="width:75px;height:25px;" data-remId="' + data + '" >Remove</button> <button type="button" style="width:75px;height:25px;" data-editId="' + data + '" >Edit</button>'
+                        }
+                    }
+                ]
+            });
+            //function to show a gray div covering whole the page 
+            function showDiv() {
+                let coverDiv = document.createElement('div');
+                coverDiv.id = 'cover-div';
+                document.body.insertBefore(coverDiv, document.body.firstChild);
+            }
+
+            function hideDiv() {
+                document.body.removeChild(document.getElementById('cover-div'));
+            }
+
+            //function to show form for adding or editing
+            function showEditAddForm(rowIndex,title, inEditMode /*true or false*/, callback) {
+                showDiv();
+                let form = document.getElementById('EditAdd-form');
+                let container = document.getElementById('EditAdd-div');
+                let idEmp;
+                document.getElementById('EditAdd-title').innerHTML = "<h2 style='text-align: left;'>" + title + "</h2>";
+
+                if (inEditMode) {
+                    $('#Emp_ID').val(mytable.cell(rowIndex, 0).data());
+                    $('#id_name').val(mytable.cell(rowIndex, 1).data());
+                    $('#id_position').val(mytable.cell(rowIndex, 2).data());
+                    $('#id_age').val(mytable.cell(rowIndex, 3).data());
+                    $('#id_startdate').val(mytable.cell(rowIndex, 4).data());
+                    idEmp = $('#Emp_ID').val();
+                }
+                else {
+                    form.reset();
+                    $('#id_name').val('');
+                    $('#id_position').val('');
+                    $('#id_age').val('');
+                    $('#id_startdate').val('11.06.2018');
+                }
+
+                function complete() {
+                    hideDiv();
+                    container.style.display = 'none';
+                    document.onkeydown = null;
+                    (inEditMode ?callback():callback());
+                }
+
+                form.onsubmit = function () {
+                    complete();
+                    return false;
+                };
+
+                form.elements.cancel.onclick = function () {
+                    hideDiv();
+                    container.style.display = 'none';
+                };
+
+                document.onkeydown = function (e) {
+                    if (e.keyCode == 27) { // escape
+                        hideDiv();
+                        container.style.display = 'none';
+                    }
+                };
+
+                var lastElem = form.elements[form.elements.length - 1];
+                var firstElem = form.elements[0];
+
+                lastElem.onkeydown = function (e) {
+                    if (e.keyCode == 9 && !e.shiftKey) {
+                        firstElem.focus();
+                        return false;
+                    }
+                };
+
+                firstElem.onkeydown = function (e) {
+                    if (e.keyCode == 9 && e.shiftKey) {
+                        lastElem.focus();
+                        return false;
+                    }
+                };
+
+
+                container.style.display = 'block';
+                form.elements.id_name.focus();
+            }
+
+            //Add new employee
+            function AddEmp() {
+
+                let Employee = {
+                    Name: $('#id_name').val(),
+                    Position: $('#id_position').val(),
+                    Age: $('#id_age').val(),
+                    StartDate: $('#id_startdate').val()
+                };
+
+                $.ajax({
+                    url: 'API/Employees/',
+                    type: 'POST',
+                    data: JSON.stringify(Employee),
+                    contentType: "application/json;charset=utf-8",
+                    success: function () {
+                        //mytable.ajax.reload();
+                        mytable.search(Employee.Name).draw();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                });
+            }
+
+            //Edit Employee
+            function EditEmp() {
+
+                let Employee = {
+                    Id: $('#Emp_ID').val(),
+                    Name: $('#id_name').val(),
+                    Position: $('#id_position').val(),
+                    Age: $('#id_age').val(),
+                    StartDate: $('#id_startdate').val()
+                };
+                $.ajax({
+                    url: 'API/Employees',
+                    type: 'PUT',
+                    data: JSON.stringify(Employee),
+                    contentType: "application/json;charset=utf-8",
+                    success: function () {
+                        mytable.ajax.reload();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                });
+            }
+
+            //remove employee
+            function RemoveEmp(id) {
+                $.ajax({
+                    url: '/API/Employees/' + id,
+                    type: 'DELETE',
+                    contentType: "application/json;charset=utf-8",
+                    success: function (data) {
+                        mytable.ajax.reload();
+                    },
+                    error: function (x, y, z) {
+                        alert(x + '\n' + y + '\n' + z);
+                    }
+                });
+            }
+
+            document.getElementById('Add').onclick = function (ev) {
+                let self = ev.target;
+                showEditAddForm(self, "Create Employee", false, AddEmp);
+            };
+            mytable.on('draw', function () {
+                document.getElementById('Add').style.display = "block";
+                $("#myDataTable tbody tr").each(function () {
+                    $(this).find("td:eq(5)").attr("nowrap", "nowrap");// nowrap the last column
+                })
+            });
+            $("#myDataTable tbody").on('click', '[data-editId]', function () {
+                showEditAddForm($(this).closest('tr').index(), "Edit Employee", true, EditEmp);
+            });
+            $("#myDataTable tbody").on('click', '[data-remId]', function () {
+                let index = $(this).closest('tr').index();
+                let id = mytable.cell(index, 0).data();
+                let Name = mytable.cell(index, 1).data();
+                if (confirm('Are you sure of removing "' + Name + '" from database?')) {
+                    RemoveEmp(id);
+                }
+            });
+        });
+</script>
+}

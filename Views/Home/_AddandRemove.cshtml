@@ -1,0 +1,69 @@
+﻿<button type="button" class="btn btn-primary" id="Add">Add</button>
+
+<!-- Modal -->
+<div id="myModal" class="modal fade" role="dialog">
+    <div class="modal-dialog">
+
+        <!-- Modal content-->
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+                <h4 class="modal-title" id='ModalHeader'></h4>
+            </div>
+            <div class="modal-body" id="MainBody">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.17.0/jquery.validate.js"></script>
+@model testDatatable.Models.Employee
+
+<div class="col-lg-12">
+    <form class="form-horizontal" id="EmpForm" method="post" action="">
+        @Html.HiddenFor(model => model.Id)
+        <div class="form-group">
+            <label>Name</label>
+            @Html.TextBoxFor(model => model.Name, new { @class = "form-control", required = "" })
+        </div>
+        <div class="form-group">
+            <label>Position</label>
+            @Html.TextBoxFor(model => model.Position, new { @class = "form-control", required = "" })
+        </div>
+        <div class="form-group">
+            <label>Age</label>
+            @Html.TextBoxFor(model => model.Age, new { @class = "form-control" })
+        </div>
+        <div class="form-group">
+            <label>Start Date</label>
+            @Html.TextBoxFor(model => model.StartDate, new { @class = "form-control" })
+        </div>
+        <div class="row">
+            <button type="button" class="btn btn-primary" id="Submit">Save</button>
+        </div>
+
+    </form>
+</div>
+<script>
+    $("#Add").on('click', function () {
+
+        $.get('/Home/Add', function (data) {
+
+            //set Modal header text
+            $("#ModalHeader").html("Adding Employee");
+
+            //add returned partial view html into modal body
+            $("#MainBody").html(data);
+
+            //show modal
+            $('#myModal').modal('show');
+
+            //inititae jQuery validation
+            $("#EmpForm").validate();
+        });
+    });
+</script>
